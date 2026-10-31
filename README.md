@@ -1,47 +1,95 @@
-# Leilão online Leonardo Ferreira Cabral
+<h1 align="center">Leilão Online em Tempo Real com Sockets TCP</h1>
 
-Requer Python 3.8+ (somente biblioteca padrão).
+<p align="center">Leonardo Ferreira Cabral</p>
 
-## Como executar
+## 📝 Sumário
+
+- [📖 Sobre](#sobre)
+- [🏁 Primeiros Passos](#primeiros_passos)
+- [📱 Uso](#uso)
+- [⛏️ Tecnologias Utilizadas](#tecnologias)
+
+## 📖 Sobre <a name = "sobre"></a>
+
+Sistema distribuído cliente-servidor que gerencia um leilão online em tempo real para um item específico. O servidor mantém conexões TCP persistentes com todos os licitantes e controla o estado do leilão: o lance atual (valor e ID do proponente) e o tempo restante. Cada cliente pode enviar lances com o comando `BID <valor>` e consultar o estado com `STATUS`.
+
+O servidor atende cada cliente em uma thread própria. A validação e o registro de um lance acontecem dentro de um mesmo `threading.Lock`, de modo que lances concorrentes são registrados de forma atômica: dois lances simultâneos nunca comparam com o mesmo "lance atual". Sempre que um novo lance válido é registrado, o servidor notifica imediatamente todos os outros clientes conectados pela conexão TCP persistente, ainda dentro da seção crítica, para que as notificações cheguem na mesma ordem em que os lances foram registrados.
+
+## 🏁 Primeiros Passos <a name = "primeiros_passos"></a>
+
+As instruções abaixo permitem executar o projeto na sua máquina local.
+
+### Pré-requisitos
+
+O projeto usa apenas a biblioteca padrão do Python, então basta ter o Python 3.8 ou superior instalado.
 
 ```bash
+# Verifique a versão do Python instalada
+python --version
+```
+
+### Instalação
+
+Não há dependências externas. Basta clonar o repositório:
+
+```bash
+# Clone o repositório e entre na pasta
+git clone https://github.com/LeofCabral/leilao-aps.git
+cd leilao-aps
+```
+
+## 📱 Uso <a name = "uso"></a>
+
+Inicie primeiro o servidor e, em seguida, um ou mais clientes, cada um em um terminal diferente.
+
+### Executando o Servidor
+
+```bash
+# Abre o leilão na porta 5000, com lance mínimo de 100 e duração de 120 segundos
 python servidor.py --porta 5000 --item Relogio-Antigo --minimo 100 --duracao 120
 ```
 
-Em outros terminais (um por licitante):
+### Executando o Cliente
 
 ```bash
+# Conecta um licitante ao servidor (abra um terminal para cada licitante)
 python cliente.py --host 127.0.0.1 --porta 5000
 ```
 
-Comandos do cliente: `BID <valor>`, `STATUS`, `QUIT`.
-
-Teste automático de concorrência (20 clientes × 25 lances simultâneos):
+Comandos disponíveis no cliente:
 
 ```bash
+BID 150    # envia um lance de 150
+STATUS     # mostra o lance atual, o proponente e o tempo restante
+QUIT       # desconecta do leilão
+```
+
+### Protocolo
+
+As mensagens são em texto, uma por linha. Respostas do servidor:
+
+```bash
+WELCOME <id> <item>                  # boas-vindas, com o ID do licitante
+OK <valor>                           # lance aceito
+ERRO <motivo>                        # lance ou comando inválido
+STATUS <item> <valor> <id> <seg>     # estado atual do leilão
+NEW_BID <valor> <id>                 # notificação de novo lance máximo (enviada aos outros clientes)
+END <valor> <id>                     # fim do leilão e vencedor
+```
+
+### Teste de Concorrência
+
+```bash
+# Sobe um servidor próprio e simula 20 licitantes enviando 25 lances cada, ao mesmo tempo
 python teste_concorrencia.py
 ```
 
-## Protocolo (texto, uma mensagem por linha)
+O teste verifica se o lance final é o maior lance aceito, se os lances aceitos formam uma sequência crescente e se um cliente observador recebeu um `NEW_BID` para cada lance aceito, na ordem correta. Ao final, deve exibir `OK: registro atômico e notificações consistentes.`
 
-| Direção | Mensagem | Significado |
-|---|---|---|
-| C → S | `BID <valor>` | envia lance |
-| C → S | `STATUS` | consulta o estado |
-| C → S | `QUIT` | desconecta |
-| S → C | `WELCOME <id> <item>` | boas-vindas, com o ID do licitante |
-| S → C | `OK <valor>` | lance aceito |
-| S → C | `ERRO <motivo>` | lance/comando inválido |
-| S → C | `STATUS <item> <valor> <id> <segundos>` | estado atual |
-| S → C | `NEW_BID <valor> <id>` | **push**: novo lance máximo (para os outros clientes) |
-| S → C | `END <valor> <id>` | fim do leilão e vencedor |
+## ⛏️ Tecnologias Utilizadas <a name = "tecnologias"></a>
 
-## Decisões de projeto
+- [Python3](https://www.python.org/) - Linguagem de programação
+- [socket](https://docs.python.org/3/library/socket.html) - Comunicação TCP entre cliente e servidor
+- [threading](https://docs.python.org/3/library/threading.html) - Atendimento concorrente dos clientes e sincronização com `Lock`
 
-- **Conexão persistente**: cada cliente aceito ganha uma thread no servidor que lê seus comandos; o socket fica aberto até o fim do leilão, e é por ele que chegam as notificações.
-- **Atomicidade**: `Leilao.dar_lance` faz a verificação (`valor > lance_atual`) e a atualização (valor + proponente) dentro do mesmo `threading.Lock`. Dois lances simultâneos nunca leem o mesmo "lance atual"; um deles sempre vence e o outro é comparado ao novo valor.
-- **Notificação imediata**: o broadcast `NEW_BID` acontece ainda dentro da seção crítica, para que todos recebam as notificações na mesma ordem em que os lances foram registrados.
-- **Escrita segura no socket**: cada cliente tem um lock de envio, porque sua própria thread (respostas) e a thread de outro licitante (notificações) podem escrever nele ao mesmo tempo.
-- **Valores**: `Decimal` com 2 casas, para evitar erros de ponto flutuante com dinheiro.
-- **Tempo**: uma thread cronômetro encerra o leilão, envia `END` a todos e fecha o servidor.
-- **Cliente**: uma thread fica lendo o socket o tempo todo, então as notificações aparecem na hora, mesmo enquanto o usuário digita.
+---
