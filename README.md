@@ -1,6 +1,6 @@
-<h1 align="center">Leilão Online em Tempo Real com Sockets TCP</h1>
+<h1 align="center">Leilão Online em Tempo Real</h1>
 
-<p align="center">Leonardo Ferreira Cabral</p>
+<p align="center">Leonardo Ferreira Cabral(estou sem grupo)</p>
 
 ## 📖 Sobre <a name = "sobre"></a>
 
