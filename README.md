@@ -11,9 +11,9 @@
 
 ## 📖 Sobre <a name = "sobre"></a>
 
-Sistema distribuído cliente-servidor que gerencia um leilão online em tempo real para um item específico. O servidor mantém conexões TCP persistentes com todos os licitantes e controla o estado do leilão: o lance atual (valor e ID do proponente) e o tempo restante. Cada cliente pode enviar lances com o comando `BID <valor>` e consultar o estado com `STATUS`.
+Sistema distribuído cliente-servidor que gerencia um leilão online em tempo real para um item específico. O servidor mantém conexões TCP persistentes com todos os usuarios e controla o estado do leilão: lance atual (valor e ID do proponente) e tempo restante. Cada cliente pode enviar lances com BID <valor> e consultar o estado com STATUS.
 
-O servidor atende cada cliente em uma thread própria. A validação e o registro de um lance acontecem dentro de um mesmo `threading.Lock`, de modo que lances concorrentes são registrados de forma atômica: dois lances simultâneos nunca comparam com o mesmo "lance atual". Sempre que um novo lance válido é registrado, o servidor notifica imediatamente todos os outros clientes conectados pela conexão TCP persistente, ainda dentro da seção crítica, para que as notificações cheguem na mesma ordem em que os lances foram registrados.
+O servidor atende cada cliente em uma thread própria. A validação e o registro de um lance acontecem dentro do mesmo threading.Lock, então lances concorrentes são registrados de forma atômica: dois lances simultâneos nunca comparam com o mesmo "lance atual". Sempre que um novo lance válido é registrado, o servidor notifica na hora todos os outros clientes conectados pela conexão TCP persistente, ainda dentro da seção crítica, para que as notificações cheguem na mesma ordem em que os lances foram registrados.
 
 ## 🏁 Primeiros Passos <a name = "primeiros_passos"></a>
 
@@ -52,7 +52,7 @@ python servidor.py --porta 5000 --item Relogio-Antigo --minimo 100 --duracao 120
 ### Executando o Cliente
 
 ```bash
-# Conecta um licitante ao servidor (abra um terminal para cada licitante)
+# Conecta um concorrente ao servidor (abra um terminal para cada concorrente)
 python cliente.py --host 127.0.0.1 --porta 5000
 ```
 
@@ -64,23 +64,10 @@ STATUS     # mostra o lance atual, o proponente e o tempo restante
 QUIT       # desconecta do leilão
 ```
 
-### Protocolo
-
-As mensagens são em texto, uma por linha. Respostas do servidor:
-
-```bash
-WELCOME <id> <item>                  # boas-vindas, com o ID do licitante
-OK <valor>                           # lance aceito
-ERRO <motivo>                        # lance ou comando inválido
-STATUS <item> <valor> <id> <seg>     # estado atual do leilão
-NEW_BID <valor> <id>                 # notificação de novo lance máximo (enviada aos outros clientes)
-END <valor> <id>                     # fim do leilão e vencedor
-```
-
 ### Teste de Concorrência
 
 ```bash
-# Sobe um servidor próprio e simula 20 licitantes enviando 25 lances cada, ao mesmo tempo
+# Sobe um servidor próprio e simula 20 concorrentes enviando 25 lances cada, ao mesmo tempo
 python teste_concorrencia.py
 ```
 
