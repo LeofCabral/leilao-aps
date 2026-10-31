@@ -2,13 +2,6 @@
 
 <p align="center">Leonardo Ferreira Cabral</p>
 
-## 📝 Sumário
-
-- [📖 Sobre](#sobre)
-- [🏁 Primeiros Passos](#primeiros_passos)
-- [📱 Uso](#uso)
-- [⛏️ Tecnologias Utilizadas](#tecnologias)
-
 ## 📖 Sobre <a name = "sobre"></a>
 
 Sistema distribuído cliente-servidor que gerencia um leilão online em tempo real para um item específico. O servidor mantém conexões TCP persistentes com todos os usuarios e controla o estado do leilão: lance atual (valor e ID do proponente) e tempo restante. Cada cliente pode enviar lances com BID <valor> e consultar o estado com STATUS.
